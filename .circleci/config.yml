@@ -46,10 +46,22 @@ jobs:
       - run:
           name: Publish Docker Image
           command: docker push $IMAGE_NAME
+      - run:
+          name: set-environment-variables
+          command: echo $SERVER > server.crt && echo $PRIVATE_KEY > privatekey.pem
+      - run:
+           name: build-docker-image-for-integration-environment
+          command: docker create -p 8443:8443 --name integration_app $IMAGE_NAME
+      - run:
+          name: copy-server-cert-and-private-key-accross
+          command: docker cp ./privatekey.pem integration_app:/privatekey.pem; docker cp ./server.crt integration_app:/server.crt
+      - run:
+          name: start-docker-container
+          command: docker start integration_app
   deploy:
     docker:
       - image: circleci/node:10.16.3
     steps:
       - run:
           name: deploy-application
-          command: ssh -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_PUBLIC_DNS "export SERVER=\"$SERVER\"; export PRIVATE_KEY=\"$PRIVATE_KEY\"; rm -rf Simple-Application-Project/; git clone https://github.com/tabynci/Simple-Application-Project.git; source Simple-Application-Project/deploy.sh"
+          command: ssh -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_PUBLIC_DNS "export SERVER=\"$SERVER\"; export IMAGE_NAME=\"$IMAGE_NAME\"; export PRIVATE_KEY=\"$PRIVATE_KEY\"; rm -rf Simple-Application-Project/; git clone https://github.com/tabynci/Simple-Application-Project.git; source Simple-Application-Project/deploy.sh"
