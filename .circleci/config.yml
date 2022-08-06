@@ -58,9 +58,6 @@ jobs:
       - run:
           name: start-docker-container
           command: docker start integration_app
-      - run: 
-          name: run-zap-scan-against-container
-          command: CONTAINER_IP=$(docker inspect integration_app --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'); docker run -t owasp/zap2docker-stable zap-baseline.py -t https://$CONTAINER_IP:8443 -P 8443
   deploy:
     docker:
       - image: circleci/node:10.16.3
